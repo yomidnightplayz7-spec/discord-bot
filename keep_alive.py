@@ -1,4 +1,3 @@
-# keep_alive.py
 from flask import Flask
 from threading import Thread
 
@@ -9,7 +8,6 @@ def home():
     return "Bot is alive!"
 
 def run():
-    # Match Deployra container port 3000
     app.run(host='0.0.0.0', port=3000)
 
 def keep_alive():

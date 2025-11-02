@@ -4,11 +4,26 @@ from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 from datetime import datetime
-from keep_alive import keep_alive  # Added for Deployra health checks
+from threading import Thread
+from flask import Flask
 
 # ------------------------------
-# Start web server for 24/7 uptime
+# Keep-alive web server for Deployra
 # ------------------------------
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot is alive!"
+
+def run_web():
+    app.run(host='0.0.0.0', port=3000)  # Must match Dockerfile container port
+
+def keep_alive():
+    t = Thread(target=run_web)
+    t.start()
+    print("✅ Keep-alive web server started on port 3000")
+
 keep_alive()
 
 # ------------------------------
@@ -24,8 +39,8 @@ if not TOKEN:
 # Settings
 # ------------------------------
 OWNER_IDS = [1135229548426965103, 1133479182081478748]  # Allowed owners
-LOG_CHANNEL_ID = 1375432176165982270  # Updated log channel ID
-VOUCH_CHANNEL_ID = 1364195817002369046  # Channel where user should vouch
+LOG_CHANNEL_ID = 1375432176165982270
+VOUCH_CHANNEL_ID = 1364195817002369046
 LOGO_PATH = "logo.png"  # Logo file path
 
 # ------------------------------
@@ -49,23 +64,19 @@ async def on_ready():
 # ------------------------------
 @bot.command(name="paid")
 async def paid(ctx, member: discord.Member, amount: str, reward: str):
-    # Permission check
     if ctx.author.id not in OWNER_IDS:
         return await ctx.send("❌ You are not allowed to use this command.")
 
-    # Check for attachment
     if len(ctx.message.attachments) == 0:
         return await ctx.send("❌ You must attach proof of payment.")
 
     proof_attachment = ctx.message.attachments[0].url
-
-    # Current date & time
     now = datetime.now()
     timestamp_str = now.strftime("%Y-%m-%d %H:%M:%S")
     transaction_id = now.strftime("%Y%m%d%H%M%S")  # Unique ID
 
     # ------------------------------
-    # Professional & Aesthetic Embed for log channel
+    # Log channel embed
     # ------------------------------
     log_embed = discord.Embed(
         title=f"💰 Payment Completed",
@@ -73,18 +84,14 @@ async def paid(ctx, member: discord.Member, amount: str, reward: str):
         color=discord.Color.green()
     )
 
-    # Inline fields for wider look
     log_embed.add_field(name="👤 Recipient", value=member.mention, inline=True)
     log_embed.add_field(name="💳 Paid By", value=ctx.author.mention, inline=True)
     log_embed.add_field(name="💵 Amount", value=f"{amount}", inline=True)
     log_embed.add_field(name="✅ Status", value="Completed", inline=True)
-    log_embed.add_field(name="\u200b", value="\u200b", inline=True)  # spacing
+    log_embed.add_field(name="\u200b", value="\u200b", inline=True)
     log_embed.add_field(name="🏷 Server", value=ctx.guild.name if ctx.guild else "DM", inline=True)
-
-    # Large fields
     log_embed.add_field(name="📄 Proof", value=f"[Click Here]({proof_attachment})", inline=False)
     log_embed.add_field(name="⏰ Date & Time", value=timestamp_str, inline=False)
-
     log_embed.set_thumbnail(url="attachment://logo.png")
     log_embed.set_footer(
         text=f"Payment Log • Paid by {ctx.author}",
@@ -92,7 +99,6 @@ async def paid(ctx, member: discord.Member, amount: str, reward: str):
     )
     log_embed.set_image(url=proof_attachment)
 
-    # Send embed to log channel
     try:
         log_channel = await bot.fetch_channel(LOG_CHANNEL_ID)
         await log_channel.send(file=discord.File(LOGO_PATH, filename="logo.png"), embed=log_embed)
@@ -100,7 +106,7 @@ async def paid(ctx, member: discord.Member, amount: str, reward: str):
         await ctx.send(f"⚠️ Could not send log embed: {e}")
 
     # ------------------------------
-    # DM the user with aesthetic embed
+    # DM the user
     # ------------------------------
     try:
         dm_embed = discord.Embed(
