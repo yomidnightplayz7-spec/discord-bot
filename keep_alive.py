@@ -9,7 +9,8 @@ def home():
     return "Bot is alive!"
 
 def run():
-    app.run(host='0.0.0.0', port=8080)
+    # Match Deployra container port 3000
+    app.run(host='0.0.0.0', port=3000)
 
 def keep_alive():
     t = Thread(target=run)
