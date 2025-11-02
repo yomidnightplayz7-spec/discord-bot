@@ -4,6 +4,12 @@ from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 from datetime import datetime
+from keep_alive import keep_alive  # Added for Deployra health checks
+
+# ------------------------------
+# Start web server for 24/7 uptime
+# ------------------------------
+keep_alive()
 
 # ------------------------------
 # Load environment variables
@@ -11,14 +17,14 @@ from datetime import datetime
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 if not TOKEN:
-    print("❌ ERROR: DISCORD_TOKEN not found in .env")
+    print("❌ ERROR: DISCORD_TOKEN not found in environment variables")
     exit()
 
 # ------------------------------
 # Settings
 # ------------------------------
 OWNER_IDS = [1135229548426965103, 1133479182081478748]  # Allowed owners
-LOG_CHANNEL_ID = 1375432176165982270  # ✅ Updated log channel ID
+LOG_CHANNEL_ID = 1375432176165982270  # Updated log channel ID
 VOUCH_CHANNEL_ID = 1364195817002369046  # Channel where user should vouch
 LOGO_PATH = "logo.png"  # Logo file path
 
@@ -31,14 +37,12 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="+", intents=intents, help_command=None)
 
-
 # ------------------------------
 # Bot ready event
 # ------------------------------
 @bot.event
 async def on_ready():
     print(f"✅ Bot logged in as {bot.user} (ID: {bot.user.id})")
-
 
 # ------------------------------
 # Paid command
@@ -121,7 +125,6 @@ async def paid(ctx, member: discord.Member, amount: str, reward: str):
         await ctx.send(f"✅ Payment logged and {member.mention} has been notified via DM.")
     except discord.Forbidden:
         await ctx.send(f"⚠️ Could not DM {member.mention}, but payment was logged.")
-
 
 # ------------------------------
 # Run the bot
